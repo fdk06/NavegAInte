@@ -31,24 +31,35 @@ def main():
     # Manejo de scraping
     existing_files = [f for f in os.listdir(raw_dir) if f.endswith(".json")]
     
+    # Determinar si debemos hacer scraping
+    ejecutar_scraping = False
+    
     if existing_files:
         print(f"📂 Se encontraron {len(existing_files)} archivos scrapeados.")
         rescrapear = input("¿Deseas re-scrapear? (s/n): ").lower() == 's'
         if rescrapear:
-            print("\n🕷️ Iniciando scraping...")
-            process = CrawlerProcess(settings={'LOG_LEVEL': 'ERROR' if not verbose else 'DEBUG'})
-            process.crawl(WebSpider, url=url)
-            process.start()
-            existing_files = [f for f in os.listdir(raw_dir) if f.endswith(".json")]
+            ejecutar_scraping = True
+    else:
+        print("📂 No se encontraron archivos scrapeados. Se iniciará el scraping automáticamente.")
+        ejecutar_scraping = True
+    
+    # Ejecutar el scraping si es necesario
+    if ejecutar_scraping:
+        print("\n🕷️ Iniciando scraping...")
+        process = CrawlerProcess(settings={'LOG_LEVEL': 'ERROR' if not verbose else 'DEBUG'})
+        process.crawl(WebSpider, url=url)
+        process.start()
+        # Actualizar la lista de archivos existentes después del scraping
+        existing_files = [f for f in os.listdir(raw_dir) if f.endswith(".json")]
 
     # Opción de procesamiento
     procesar = True
-    if existing_files and not rescrapear:
+    if existing_files and not ejecutar_scraping:
         procesar = input("¿Deseas procesar los datos existentes? (s/n): ").lower() == 's'
 
     # Procesamiento de datos
     processed_files = []
-    if procesar:
+    if procesar and existing_files:  # Asegurarse de que haya archivos para procesar
         analyzer = ContentAnalyzer()
         for file in existing_files:
             full_path = os.path.join(raw_dir, file)
